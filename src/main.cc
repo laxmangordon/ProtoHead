@@ -87,7 +87,10 @@ int main(int argc, char *argc[]){
 
   RGBMatrix::Options my_defaults;
   my_defaults.hardware_mapping = "adafruit-hat";
+  my_defaults.rows = 32;
+  my_defualts.cols = 64;
   my_defaults.chain_length = 2;
+  my_defaults.brightness = 80;
 
   rgb_matrix::RuntimeOptions runtime_defaults;
 
