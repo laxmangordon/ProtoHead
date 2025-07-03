@@ -54,7 +54,7 @@ static ImageVector LoadImageAndScaleImage(const char *filename,
 }
 
 void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas) {
-  const int offset_x = 0, offset_y = 0;  // If you want to move the image.
+  const int offset_x = 0, offset_y = -33;  // If you want to move the image.
   // Copy all the pixels to the canvas.
   for (size_t y = 0; y < image.rows(); ++y) {
     for (size_t x = 0; x < image.columns(); ++x) {
@@ -64,6 +64,39 @@ void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas) {
                          ScaleQuantumToChar(c.redQuantum()),
                          ScaleQuantumToChar(c.greenQuantum()),
                          ScaleQuantumToChar(c.blueQuantum()));
+      }
+    }
+  }
+}
+
+void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas, int *loopNumber) {
+  int offset_x = 0, offset_y = 0;  // If you want to move the image.
+    // Copy all the pixels to the canvas.
+  for (size_t y = 0; y < image.rows(); ++y) {
+    for (size_t x = 0; x < image.columns(); ++x) {
+      const Magick::Color &c = image.pixelColor(x, y);
+      if (c.alphaQuantum() < 256) {
+        switch (*loopNumber){
+          case 0:
+            offset_x, offset_y = 0;
+            canvas->SetPixel(x + offset_x, y + offset_y, ScaleQuantumToChar(c.redQuantum()), ScaleQuantumToChar(c.greenQuantum()), ScaleQuantumToChar(c.blueQuantum()));
+            break;
+          case 1:
+            offset_x = 0;
+            offset_y = -33;
+            canvas->SetPixel(x + offset_x, y + offset_y, ScaleQuantumToChar(c.redQuantum()), ScaleQuantumToChar(c.greenQuantum()), ScaleQuantumToChar(c.blueQuantum()));
+            break;
+          case 2:
+            offset_x = 0;
+            offset_y = -66;
+            canvas->SetPixel(x + offset_x, y + offset_y, ScaleQuantumToChar(c.redQuantum()), ScaleQuantumToChar(c.greenQuantum()), ScaleQuantumToChar(c.blueQuantum()));
+            break;
+          case 3:
+            offset_x = 0;
+            offset_y = -99;
+            canvas->SetPixel(x + offset_x, y + offset_y, ScaleQuantumToChar(c.redQuantum()), ScaleQuantumToChar(c.greenQuantum()), ScaleQuantumToChar(c.blueQuantum()));
+            break;
+        }
       }
     }
   }
@@ -81,16 +114,20 @@ void ShowAnimatedImage(const ImageVector &images, RGBMatrix *matrix) {
   }
 }
 
-int main(int argc, char *argc[]){
+int main(int argc, char *argv[]){
 
-  Magick::InitializeMagick(*argc);
+  Magick::InitializeMagick(*argv);
 
   RGBMatrix::Options my_defaults;
-  my_defaults.hardware_mapping = "adafruit-hat";
+  my_defaults.hardware_mapping = "adafruit-hat-pwm";
+  my_defaults.led_rgb_sequence = "GBR";
+  my_defaults.row_address_type = 0;
+  my_defaults.pwm_lsb_nanoseconds = 130;
   my_defaults.rows = 32;
-  my_defualts.cols = 64;
+  my_defaults.cols = 64;
   my_defaults.chain_length = 2;
   my_defaults.brightness = 80;
+  my_defaults.show_refresh_rate = true;
 
   rgb_matrix::RuntimeOptions runtime_defaults;
 
@@ -103,19 +140,27 @@ int main(int argc, char *argc[]){
     return 1;
   }
 
-  char *filename = "000.png";
+  char *filename = "FaceShiftTest.png";
 
   signal(SIGTERM, InterruptHandler);
   signal(SIGINT, InterruptHandler);
 
-  ImageVector images = LoadImageAndScaleImage(filename, matrix->width(), matrix->height());
+  ImageVector images = LoadImageAndScaleImage(filename, 128/*matrix->width()*/, 131/*matrix->height()*/);
+
+  int LoopNum = 0;
 
   switch (images.size()){
     case 0:
       break;
     case 1:
-      CopyImageToCanvas(images[0], matrix);
-      while (!interrupt_received) sleep(1000);
+      while (!interrupt_received){
+        CopyImageToCanvas(images[0], matrix, &LoopNum);
+        LoopNum++;
+        if (LoopNum == 4){
+          LoopNum = 0;
+        }
+        usleep(500000);
+      }
       break;
     default:
       ShowAnimatedImage(images, matrix);
