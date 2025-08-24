@@ -20,9 +20,9 @@ static void InterruptHandler(int signo) {
 
 using ImageVector = std::vector<Magick::Image>;
 
-static ImageVector LoadImageAndScaleImage(const char *filename,
+static ImageVector LoadImageAndScaleImage(const char *filename/*,
                                           int target_width,
-                                          int target_height) {
+                                          int target_height*/) {
   ImageVector result;
 
   ImageVector frames;
@@ -47,7 +47,7 @@ static ImageVector LoadImageAndScaleImage(const char *filename,
   }
 
   for (Magick::Image &image : result) {
-    image.scale(Magick::Geometry(target_width, target_height));
+    //image.scale(Magick::Geometry(target_width, target_height));
   }
 
   return result;
@@ -69,33 +69,20 @@ void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas) {
   }
 }
 
-void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas, int *loopNumber) {
-  int offset_x = 0, offset_y = 0;  // If you want to move the image.
-    // Copy all the pixels to the canvas.
-  for (size_t y = 0; y < image.rows(); ++y) {
-    for (size_t x = 0; x < image.columns(); ++x) {
-      const Magick::Color &c = image.pixelColor(x, y);
-      if (c.alphaQuantum() < 256) {
-        switch (*loopNumber){
-          case 0:
-            offset_x, offset_y = 0;
-            canvas->SetPixel(x + offset_x, y + offset_y, ScaleQuantumToChar(c.redQuantum()), ScaleQuantumToChar(c.greenQuantum()), ScaleQuantumToChar(c.blueQuantum()));
-            break;
-          case 1:
-            offset_x = 0;
-            offset_y = -33;
-            canvas->SetPixel(x + offset_x, y + offset_y, ScaleQuantumToChar(c.redQuantum()), ScaleQuantumToChar(c.greenQuantum()), ScaleQuantumToChar(c.blueQuantum()));
-            break;
-          case 2:
-            offset_x = 0;
-            offset_y = -66;
-            canvas->SetPixel(x + offset_x, y + offset_y, ScaleQuantumToChar(c.redQuantum()), ScaleQuantumToChar(c.greenQuantum()), ScaleQuantumToChar(c.blueQuantum()));
-            break;
-          case 3:
-            offset_x = 0;
-            offset_y = -99;
-            canvas->SetPixel(x + offset_x, y + offset_y, ScaleQuantumToChar(c.redQuantum()), ScaleQuantumToChar(c.greenQuantum()), ScaleQuantumToChar(c.blueQuantum()));
-            break;
+void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas, int shownImageX, int shownImageY, bool *imageCheck) {// Copy all the pixels to the canvas.
+  int offset_x = shownImageX * 128, offset_y = shownImageY * 32;  // If you want to move the image.
+
+  if(!*imageCheck){
+    if (((image.colums() % 128) == 0) && ((image.rows() % 32) == 0)){
+      *imageCheck = true;
+    }
+  }
+  else {
+    for (size_t y = 0; y < image.rows(); ++y) {
+      for (size_t x = 0; x < image.columns(); ++x) {
+        const Magick::Color &c = image.pixelColor(x, y);
+        if (c.alphaQuantum() < 256) {
+          canvas->SetPixel(x + offset_x, y + offset_y, ScaleQuantumToChar(c.redQuantum()), ScaleQuantumToChar(c.greenQuantum()), ScaleQuantumToChar(c.blueQuantum()));
         }
       }
     }
@@ -121,6 +108,7 @@ int main(int argc, char *argv[]){
   RGBMatrix::Options my_defaults;
   my_defaults.hardware_mapping = "adafruit-hat-pwm";
   my_defaults.led_rgb_sequence = "GBR";
+  my_defaults.disable_busy_waiting = true;
   my_defaults.row_address_type = 0;
   my_defaults.pwm_lsb_nanoseconds = 130;
   my_defaults.rows = 32;
@@ -145,7 +133,7 @@ int main(int argc, char *argv[]){
   signal(SIGTERM, InterruptHandler);
   signal(SIGINT, InterruptHandler);
 
-  ImageVector images = LoadImageAndScaleImage(filename, 128/*matrix->width()*/, 131/*matrix->height()*/);
+  ImageVector images = LoadImageAndScaleImage(filename/*, matrix->width(), matrix->height()*/);
 
   int LoopNum = 0;
 
@@ -154,7 +142,7 @@ int main(int argc, char *argv[]){
       break;
     case 1:
       while (!interrupt_received){
-        CopyImageToCanvas(images[0], matrix, &LoopNum);
+        CopyImageToCanvas(images[0], matrix, 1, LoopNum);
         LoopNum++;
         if (LoopNum == 4){
           LoopNum = 0;
