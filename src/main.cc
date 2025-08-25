@@ -74,7 +74,7 @@ void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas, int shownImag
   int offset_y = shownImageY * 32;  // If you want to move the image.
 
   if(*check == false){
-    if (((image.colums() % 128) == 0) && ((image.rows() % 32) == 0)){
+    if (((image.columns() % 128) == 0) && ((image.rows() % 32) == 0)){
       *check = true;
     }
   }
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]){
   my_defaults.cols = 64;
   my_defaults.chain_length = 2;
   my_defaults.brightness = 80;
-  my_defaults.show_refresh_rate = true;
+  my_defaults.show_refresh_rate = false;
 
   rgb_matrix::RuntimeOptions runtime_defaults;
 
@@ -147,9 +147,9 @@ int main(int argc, char *argv[]){
       while (!interrupt_received){
         CopyImageToCanvas(images[0], matrix, xCOR, yCOR, &ImageCheck);
         yCOR++;
+        printf("%d\n", yCOR);
         if (yCOR == 4){
           yCOR = 0;
-          printf(LoopNum);
         }
         usleep(500000);
       }
