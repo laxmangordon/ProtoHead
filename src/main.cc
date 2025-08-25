@@ -72,10 +72,14 @@ void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas) {
 void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas, int shownImageX, int shownImageY, bool *check) {// Copy all the pixels to the canvas.
   int offset_x = shownImageX * 128;
   int offset_y = shownImageY * 32;  // If you want to move the image.
+  
+  printf("X Offset: %d\n", offset_x);
+  printf("Y Offset: %d\n", offset_y);
 
   if(*check == false){
     if (((image.columns() % 128) == 0) && ((image.rows() % 32) == 0)){
       *check = true;
+      return;
     }
   }
   else {
@@ -83,6 +87,7 @@ void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas, int shownImag
       for (size_t x = 0; x < image.columns(); ++x) {
         const Magick::Color &c = image.pixelColor(x, y);
         if (c.alphaQuantum() < 256) {
+          printf("DEBUG: setting image");
           canvas->SetPixel(x + offset_x, y + offset_y, ScaleQuantumToChar(c.redQuantum()), ScaleQuantumToChar(c.greenQuantum()), ScaleQuantumToChar(c.blueQuantum()));
         }
       }
