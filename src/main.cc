@@ -20,9 +20,9 @@ static void InterruptHandler(int signo) {
 
 using ImageVector = std::vector<Magick::Image>;
 
-static ImageVector LoadImageAndScaleImage(const char *filename/*,
+static ImageVector LoadImageAndScaleImage(const char *filename,
                                           int target_width,
-                                          int target_height*/) {
+                                          int target_height) {
   ImageVector result;
 
   ImageVector frames;
@@ -47,7 +47,7 @@ static ImageVector LoadImageAndScaleImage(const char *filename/*,
   }
 
   for (Magick::Image &image : result) {
-    //image.scale(Magick::Geometry(target_width, target_height));
+    image.scale(Magick::Geometry(target_width, target_height));
   }
 
   return result;
@@ -69,12 +69,13 @@ void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas) {
   }
 }
 
-void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas, int shownImageX, int shownImageY, bool *imageCheck) {// Copy all the pixels to the canvas.
-  int offset_x = shownImageX * 128, offset_y = shownImageY * 32;  // If you want to move the image.
+void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas, int shownImageX, int shownImageY, bool *check) {// Copy all the pixels to the canvas.
+  int offset_x = shownImageX * 128;
+  int offset_y = shownImageY * 32;  // If you want to move the image.
 
-  if(!*imageCheck){
+  if(*check == false){
     if (((image.colums() % 128) == 0) && ((image.rows() % 32) == 0)){
-      *imageCheck = true;
+      *check = true;
     }
   }
   else {
@@ -108,7 +109,7 @@ int main(int argc, char *argv[]){
   RGBMatrix::Options my_defaults;
   my_defaults.hardware_mapping = "adafruit-hat-pwm";
   my_defaults.led_rgb_sequence = "GBR";
-  my_defaults.disable_busy_waiting = true;
+  //my_defaults.disable_busy_waiting = true;
   my_defaults.row_address_type = 0;
   my_defaults.pwm_lsb_nanoseconds = 130;
   my_defaults.rows = 32;
@@ -133,19 +134,22 @@ int main(int argc, char *argv[]){
   signal(SIGTERM, InterruptHandler);
   signal(SIGINT, InterruptHandler);
 
-  ImageVector images = LoadImageAndScaleImage(filename/*, matrix->width(), matrix->height()*/);
+  ImageVector images = LoadImageAndScaleImage(filename, 128, 131/*, matrix->width(), matrix->height()*/);
 
-  int LoopNum = 0;
+  int xCOR = 0;
+  int yCOR = 0;
+  bool ImageCheck = true;
 
   switch (images.size()){
     case 0:
       break;
     case 1:
       while (!interrupt_received){
-        CopyImageToCanvas(images[0], matrix, 1, LoopNum);
-        LoopNum++;
-        if (LoopNum == 4){
-          LoopNum = 0;
+        CopyImageToCanvas(images[0], matrix, xCOR, yCOR, &ImageCheck);
+        yCOR++;
+        if (yCOR == 4){
+          yCOR = 0;
+          printf(LoopNum);
         }
         usleep(500000);
       }
