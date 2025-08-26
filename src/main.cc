@@ -20,9 +20,9 @@ static void InterruptHandler(int signo) {
 
 using ImageVector = std::vector<Magick::Image>;
 
-static ImageVector LoadImageAndScaleImage(const char *filename,
+static ImageVector LoadImageAndScaleImage(const char *filename/*,
                                           int target_width,
-                                          int target_height) {
+                                          int target_height*/) {
   ImageVector result;
 
   ImageVector frames;
@@ -47,7 +47,7 @@ static ImageVector LoadImageAndScaleImage(const char *filename,
   }
 
   for (Magick::Image &image : result) {
-    image.scale(Magick::Geometry(target_width, target_height));
+    //image.scale(Magick::Geometry(target_width, target_height));
   }
 
   return result;
@@ -71,10 +71,7 @@ void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas) {
 
 void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas, int shownImageX, int shownImageY, bool *check) {// Copy all the pixels to the canvas.
   int offset_x = shownImageX * 128;
-  int offset_y = shownImageY * 32;  // If you want to move the image.
-  
-  printf("X Offset: %d\n", offset_x);
-  printf("Y Offset: %d\n", offset_y);
+  int offset_y = shownImageY * -32;  // If you want to move the image.
 
   if(*check == false){
     if (((image.columns() % 128) == 0) && ((image.rows() % 32) == 0)){
@@ -87,7 +84,6 @@ void CopyImageToCanvas(const Magick::Image &image, Canvas *canvas, int shownImag
       for (size_t x = 0; x < image.columns(); ++x) {
         const Magick::Color &c = image.pixelColor(x, y);
         if (c.alphaQuantum() < 256) {
-          printf("DEBUG: setting image");
           canvas->SetPixel(x + offset_x, y + offset_y, ScaleQuantumToChar(c.redQuantum()), ScaleQuantumToChar(c.greenQuantum()), ScaleQuantumToChar(c.blueQuantum()));
         }
       }
@@ -121,7 +117,7 @@ int main(int argc, char *argv[]){
   my_defaults.cols = 64;
   my_defaults.chain_length = 2;
   my_defaults.brightness = 80;
-  my_defaults.show_refresh_rate = false;
+  my_defaults.show_refresh_rate = true;
 
   rgb_matrix::RuntimeOptions runtime_defaults;
 
@@ -139,7 +135,7 @@ int main(int argc, char *argv[]){
   signal(SIGTERM, InterruptHandler);
   signal(SIGINT, InterruptHandler);
 
-  ImageVector images = LoadImageAndScaleImage(filename, 128, 131/*, matrix->width(), matrix->height()*/);
+  ImageVector images = LoadImageAndScaleImage(filename/*, matrix->width(), matrix->height()*/);
 
   int xCOR = 0;
   int yCOR = 0;
@@ -152,7 +148,6 @@ int main(int argc, char *argv[]){
       while (!interrupt_received){
         CopyImageToCanvas(images[0], matrix, xCOR, yCOR, &ImageCheck);
         yCOR++;
-        printf("%d\n", yCOR);
         if (yCOR == 4){
           yCOR = 0;
         }
